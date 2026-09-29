@@ -1,179 +1,722 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MediaPro - Video & Audio Downloader for Windows & Android</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-        }
-    </script>
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0b1220">
+<meta name="description" content="MediaPro — fast video and audio downloader for Windows and Android.">
+<title>MediaPro V1 — Video & Audio Downloader</title>
+
+<!-- Default Light Theme, only apply Dark if user explicitly saved 'dark' -->
+<script>
+  (function() {
+    const savedTheme = localStorage.getItem('mediapro-theme');
+    if (savedTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  })();
+</script>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  darkMode: 'class',
+  theme: {
+    extend: {
+      fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+      boxShadow: {
+        glow: '0 0 70px rgba(59,130,246,.16)',
+        emeraldGlow: '0 0 70px rgba(16,185,129,.16)'
+      }
+    }
+  }
+}
+</script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+  html { scroll-behavior: smooth; }
+  body { font-family: Inter, system-ui, -apple-system, sans-serif; }
+  ::selection { background:#2563eb; color:white; }
+  .grid-bg {
+    background-image:
+      linear-gradient(rgba(148,163,184,.07) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(148,163,184,.07) 1px, transparent 1px);
+    background-size: 38px 38px;
+    mask-image: linear-gradient(to bottom, black, transparent 88%);
+  }
+  .orb { filter: blur(80px); animation: float 9s ease-in-out infinite; }
+  .orb2 { animation-delay: -4s; }
+  @keyframes float {
+    0%,100% { transform: translate3d(0,0,0) scale(1); }
+    50% { transform: translate3d(18px,-22px,0) scale(1.08); }
+  }
+  .reveal { opacity:0; transform:translateY(22px); transition:opacity .7s ease, transform .7s ease; }
+  .reveal.show { opacity:1; transform:none; }
+  .bar { animation:soundwave 1s ease-in-out infinite alternate; }
+  .bar:nth-child(2){animation-delay:.15s}.bar:nth-child(3){animation-delay:.3s}.bar:nth-child(4){animation-delay:.45s}
+  @keyframes soundwave { from{height:5px} to{height:22px} }
+  .download-card { transition:transform .3s ease, border-color .3s ease, box-shadow .3s ease; }
+  .download-card:hover { transform:translateY(-6px); box-shadow:0 24px 60px rgba(0,0,0,.18); }
+  .shine { position:relative; overflow:hidden; }
+  .shine:after {
+    content:""; position:absolute; inset:-120% 40% auto -40%; height:220%;
+    transform:rotate(25deg); background:linear-gradient(90deg,transparent,rgba(255,255,255,.08),transparent);
+    transition:transform .7s ease;
+  }
+  .shine:hover:after { transform:translateX(120%) rotate(25deg); }
+  .faq-answer { max-height:0; overflow:hidden; transition:max-height .35s ease, padding .35s ease; }
+  .faq.open .faq-answer { max-height:180px; padding-bottom:18px; }
+  .faq.open .faq-icon { transform:rotate(45deg); }
+  .faq-icon { transition:transform .25s ease; }
+  .toast { transform:translateY(120px); opacity:0; transition:.35s ease; }
+  .toast.show { transform:none; opacity:1; }
+  @media (prefers-reduced-motion: reduce) {
+    *,*::before,*::after { animation:none!important; transition:none!important; scroll-behavior:auto!important; }
+  }
+</style>
 </head>
-<body class="bg-slate-50 dark:bg-[#0d1117] text-slate-800 dark:text-[#c9d1d9] antialiased min-h-screen flex flex-col justify-between transition-colors duration-300">
 
-    <!-- Header / Navbar -->
-    <header class="border-b border-slate-200 dark:border-[#30363d] bg-white/80 dark:bg-[#161b22]/80 sticky top-0 z-50 backdrop-blur">
-        <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
-            <div class="flex items-center space-x-3">
-                <i class="fa-solid fa-wand-magic-sparkles text-2xl text-blue-500"></i>
-                <span class="text-xl font-bold tracking-wide text-slate-900 dark:text-white">MediaPro</span>
-            </div>
-            <div class="flex items-center space-x-4">
-                <!-- Theme Toggle Button -->
-                <button id="theme-toggle" class="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition">
-                    <i id="theme-icon" class="fa-solid fa-moon text-lg"></i>
-                </button>
-                
-                <a href="https://github.com/kmltronix" target="_blank" class="text-slate-500 hover:text-slate-900 dark:text-gray-400 dark:hover:text-white transition">
-                    <i class="fa-brands fa-github text-2xl"></i>
-                </a>
-                <a href="https://tiktok.com/@kmltronix" target="_blank" class="text-slate-500 hover:text-slate-900 dark:text-gray-400 dark:hover:text-white transition">
-                    <i class="fa-brands fa-tiktok text-2xl"></i>
-                </a>
-            </div>
+<body class="bg-slate-50 text-slate-800 dark:bg-[#080d16] dark:text-slate-200 min-h-screen overflow-x-hidden">
+
+<!-- Ambient background -->
+<div class="fixed inset-0 pointer-events-none -z-10 overflow-hidden">
+  <div class="grid-bg absolute inset-0"></div>
+  <!-- Cursor Glow Spotlight -->
+  <div id="cursor-glow" class="pointer-events-none fixed -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-blue-500/15 dark:bg-cyan-500/15 rounded-full blur-[100px] transition-opacity duration-300 opacity-0"></div>
+  <div class="orb absolute -top-40 -left-32 w-96 h-96 rounded-full bg-blue-600/20"></div>
+  <div class="orb orb2 absolute top-64 -right-32 w-96 h-96 rounded-full bg-emerald-500/15"></div>
+</div>
+
+<header class="sticky top-0 z-50 border-b border-slate-200/70 dark:border-white/10 bg-white/75 dark:bg-[#080d16]/75 backdrop-blur-xl">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <a href="#" class="flex items-center gap-3">
+        <!-- MediaPro App Icon -->
+        <img src="app_icon.png" alt="MediaPro Logo" class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl object-cover shadow-md shadow-cyan-500/20" />
+        
+        <div>
+          <span class="font-black text-slate-950 dark:text-white text-base sm:text-lg block leading-tight">MediaPro</span>
+          <span class="block text-[9px] sm:text-[10px] font-bold tracking-widest text-emerald-500 uppercase">V1 RELEASE</span>
         </div>
-    </header>
+      </a>
+    </div>
 
-    <!-- Hero Section -->
-    <section class="max-w-6xl mx-auto px-6 pt-16 pb-12 text-center">
-        <span class="inline-block bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider mb-4">
-            v1.4 Windows & v1.1 Android Ready
-        </span>
-        <h1 class="text-4xl md:text-6xl font-extrabold text-slate-900 dark:text-white tracking-tight mb-6">
-            Fast, Precise & Multi-Platform <br/>
-            <span class="bg-gradient-to-r from-blue-600 to-emerald-500 dark:from-blue-400 dark:to-emerald-400 bg-clip-text text-transparent">Media Downloader</span>
+    <nav class="hidden md:flex items-center gap-7 text-sm font-medium text-slate-600 dark:text-slate-300">
+      <a href="#downloads" class="hover:text-blue-500 transition">Downloads</a>
+      <a href="#features" class="hover:text-blue-500 transition">Features</a>
+      <a href="#screenshots" class="hover:text-blue-500 transition">Screenshots</a>
+      <a href="#how" class="hover:text-blue-500 transition">How it works</a>
+      <a href="#faq" class="hover:text-blue-500 transition">FAQ</a>
+    </nav>
+
+    <div class="flex items-center gap-2">
+      <a href="https://github.com/kmltronix" target="_blank" rel="noopener" aria-label="GitHub"
+         class="hidden sm:flex w-9 h-9 sm:w-10 sm:h-10 items-center justify-center rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 transition">
+        <i class="fa-brands fa-github"></i>
+      </a>
+      <button id="theme-toggle" aria-label="Toggle theme"
+        class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 transition flex items-center justify-center">
+        <i id="theme-icon" class="fa-solid fa-moon"></i>
+      </button>
+      <!-- Top Left Profile Image Button -->
+      <button id="profile-btn" aria-label="About Developer" class="w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden border-2 border-emerald-500 hover:scale-105 transition-transform shadow-md focus:outline-none shrink-0">
+        <img src="https://github.com/kmltronix.png" alt="Kavindu M. Liyanage" class="w-full h-full object-cover">
+      </button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- HERO -->
+  <section class="max-w-7xl mx-auto px-4 sm:px-6 pt-8 sm:pt-16 md:pt-24 pb-8 sm:pb-14">
+    <div class="grid lg:grid-cols-[1.15fr_.85fr] gap-8 md:gap-12 items-center">
+      <div class="reveal">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold uppercase tracking-wider mb-4 sm:mb-6">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          Windows + Android
+        </div>
+
+        <h1 class="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight leading-[1.05] sm:leading-[.98] text-slate-950 dark:text-white">
+          Your media.<br>
+          <span class="bg-gradient-to-r from-blue-500 via-cyan-400 to-emerald-400 bg-clip-text text-transparent">Your way.</span>
         </h1>
-        <p class="text-slate-600 dark:text-gray-400 text-lg max-w-2xl mx-auto mb-10">
-            Download 4K 60FPS videos and high-quality 320kbps MP3s effortlessly across YouTube, TikTok, Facebook, Instagram, and more.
+
+        <p class="mt-4 sm:mt-7 max-w-2xl text-sm sm:text-lg leading-6 sm:leading-8 text-slate-600 dark:text-slate-400">
+          A clean, fast media downloader for Windows and Android — with batch downloads,
+          trimming, high-quality audio extraction, and background audio playback.
         </p>
 
-        <!-- Main Action Buttons -->
-        <div class="flex flex-col sm:flex-row justify-center gap-4 mb-12">
-            <a href="#windows-download" class="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-8 py-3.5 rounded-xl transition flex items-center justify-center space-x-2 shadow-lg shadow-blue-600/20">
-                <i class="fa-brands fa-windows text-xl"></i>
-                <span>Windows App (v1.4)</span>
+        <div class="mt-6 sm:mt-9 flex flex-col sm:flex-row gap-3">
+          <a href="#downloads" class="shine inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-lg shadow-blue-600/20 transition text-sm sm:text-base">
+            <i class="fa-solid fa-download"></i> Download MediaPro
+          </a>
+          <a href="#features" class="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl border border-slate-300 dark:border-white/10 bg-white/70 dark:bg-white/5 hover:bg-white dark:hover:bg-white/10 font-bold transition text-sm sm:text-base">
+            <i class="fa-solid fa-sparkles"></i> Explore features
+          </a>
+        </div>
+
+        <div class="mt-6 sm:mt-8 flex flex-wrap gap-x-5 gap-y-2 text-xs text-slate-500 dark:text-slate-400">
+          <span><i class="fa-solid fa-circle-check text-emerald-500 mr-1"></i> Windows 10/11</span>
+          <span><i class="fa-solid fa-circle-check text-emerald-500 mr-1"></i> Android builds</span>
+          <span><i class="fa-solid fa-circle-check text-emerald-500 mr-1"></i> No account required</span>
+        </div>
+      </div>
+
+      <div class="reveal mt-4 lg:mt-0">
+        <div class="relative rounded-3xl border border-slate-200 dark:border-white/10 bg-white/75 dark:bg-[#101722]/80 backdrop-blur-xl p-3.5 sm:p-5 shadow-glow">
+          <div class="rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-950 p-4 sm:p-5 text-white">
+            <div class="flex items-center justify-between mb-4 sm:mb-6">
+              <div class="flex gap-1.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
+                <span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
+                <span class="w-2.5 h-2.5 rounded-full bg-green-400"></span>
+              </div>
+              <span class="text-[10px] text-slate-500 uppercase tracking-widest">MediaPro</span>
+            </div>
+            <div class="rounded-xl bg-white/5 border border-white/10 p-3 sm:p-4">
+              <div class="text-[10px] sm:text-xs text-slate-500 mb-1.5">MEDIA URL</div>
+              <div class="flex items-center gap-2">
+                <div class="flex-1 h-9 sm:h-10 rounded-lg bg-white/5 border border-white/10 px-3 flex items-center text-xs text-slate-400 overflow-hidden">
+                  https://youtube.com/watch?v=...
+                </div>
+                <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-blue-600 flex items-center justify-center shrink-0">
+                  <i class="fa-solid fa-arrow-down text-sm sm:text-base"></i>
+                </div>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-2.5 sm:gap-3 mt-3">
+              <div class="rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-3 sm:p-4">
+                <i class="fa-solid fa-music text-emerald-400"></i>
+                <div class="mt-1.5 font-bold text-xs sm:text-sm">MP3 Audio</div>
+                <div class="text-[10px] sm:text-[11px] text-slate-500 mt-0.5">High quality</div>
+              </div>
+              <div class="rounded-xl bg-blue-500/10 border border-blue-500/20 p-3 sm:p-4">
+                <i class="fa-solid fa-video text-blue-400"></i>
+                <div class="mt-1.5 font-bold text-xs sm:text-sm">Video</div>
+                <div class="text-[10px] sm:text-[11px] text-slate-500 mt-0.5">High resolution</div>
+              </div>
+            </div>
+            <div class="mt-3 rounded-xl bg-white/5 border border-white/10 p-3 sm:p-4">
+              <div class="flex justify-between text-xs mb-1.5">
+                <span class="text-slate-400 text-[11px] sm:text-xs">Download queue</span>
+                <span class="text-emerald-400 text-[11px] sm:text-xs">Ready</span>
+              </div>
+              <div class="h-1.5 sm:h-2 bg-white/10 rounded-full overflow-hidden">
+                <div class="h-full w-[82%] bg-gradient-to-r from-blue-500 to-emerald-400 rounded-full"></div>
+              </div>
+            </div>
+          </div>
+          <div class="absolute -bottom-3 -right-2 sm:-bottom-4 sm:-right-4 px-3 py-2 sm:px-4 sm:py-3 rounded-2xl bg-emerald-500 text-white shadow-xl shadow-emerald-500/20">
+            <div class="text-[9px] sm:text-[10px] uppercase tracking-widest opacity-80">Background</div>
+            <div class="font-black text-xs sm:text-base">Audio Ready</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STATS -->
+  <section class="max-w-7xl mx-auto px-4 sm:px-6 pb-6 sm:pb-10">
+    <div class="reveal grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
+      <div class="rounded-2xl border border-slate-200 dark:border-white/10 bg-white/70 dark:bg-white/[.03] p-4 sm:p-5">
+        <div class="text-xl sm:text-2xl font-black text-slate-950 dark:text-white">2</div>
+        <div class="text-[11px] sm:text-xs text-slate-500 mt-0.5">Platforms</div>
+      </div>
+      <div class="rounded-2xl border border-slate-200 dark:border-white/10 bg-white/70 dark:bg-white/[.03] p-4 sm:p-5">
+        <div class="text-xl sm:text-2xl font-black text-slate-950 dark:text-white">4K</div>
+        <div class="text-[11px] sm:text-xs text-slate-500 mt-0.5">Video target</div>
+      </div>
+      <div class="rounded-2xl border border-slate-200 dark:border-white/10 bg-white/70 dark:bg-white/[.03] p-4 sm:p-5">
+        <div class="text-xl sm:text-2xl font-black text-slate-950 dark:text-white">320</div>
+        <div class="text-[11px] sm:text-xs text-slate-500 mt-0.5">kbps audio</div>
+      </div>
+      <div class="rounded-2xl border border-slate-200 dark:border-white/10 bg-white/70 dark:bg-white/[.03] p-4 sm:p-5">
+        <div class="text-xl sm:text-2xl font-black text-slate-950 dark:text-white">V1</div>
+        <div class="text-[11px] sm:text-xs text-slate-500 mt-0.5">Landing experience</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DOWNLOADS -->
+  <section id="downloads" class="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-16 md:py-20">
+    <div class="reveal text-center max-w-2xl mx-auto">
+      <div class="text-blue-500 text-xs font-bold uppercase tracking-[.2em]">Download center</div>
+      <h2 class="mt-2 text-2xl sm:text-4xl font-black text-slate-950 dark:text-white">Choose your platform</h2>
+      <p class="mt-2 text-xs sm:text-base text-slate-600 dark:text-slate-400">Pick the build that matches your device and start using MediaPro.</p>
+    </div>
+
+    <div class="mt-6 sm:mt-10 grid lg:grid-cols-2 gap-5 sm:gap-6">
+      <!-- Windows -->
+      <article class="download-card shine reveal rounded-3xl border border-blue-500/20 dark:border-blue-400/20 bg-white/80 dark:bg-[#101722]/85 backdrop-blur-xl p-5 sm:p-7 shadow-glow flex flex-col justify-between">
+        <div>
+          <div class="flex items-start justify-between gap-3">
+            <div class="flex items-center gap-3.5">
+              <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-blue-500/10 text-blue-500 flex items-center justify-center text-xl sm:text-2xl shrink-0">
+                <i class="fa-brands fa-windows"></i>
+              </div>
+              <div>
+                <div class="font-black text-lg sm:text-xl text-slate-950 dark:text-white">MediaPro Windows</div>
+                <div class="text-xs text-slate-500 mt-0.5">Desktop • v1.4</div>
+              </div>
+            </div>
+            <span class="px-2.5 py-1 rounded-full bg-blue-500/10 text-blue-500 text-[10px] font-bold uppercase shrink-0">Latest</span>
+          </div>
+
+          <div class="mt-5 sm:mt-7 grid sm:grid-cols-2 gap-2.5 text-xs sm:text-sm">
+            <div class="rounded-xl bg-slate-100 dark:bg-white/5 p-3.5"><i class="fa-solid fa-layer-group text-blue-500 mr-2"></i>Batch downloads</div>
+            <div class="rounded-xl bg-slate-100 dark:bg-white/5 p-3.5"><i class="fa-solid fa-scissors text-blue-500 mr-2"></i>Media trimming</div>
+            <div class="rounded-xl bg-slate-100 dark:bg-white/5 p-3.5"><i class="fa-solid fa-gauge-high text-blue-500 mr-2"></i>Engine optimized</div>
+            <div class="rounded-xl bg-slate-100 dark:bg-white/5 p-3.5"><i class="fa-solid fa-hard-drive text-blue-500 mr-2"></i>Low RAM usage</div>
+          </div>
+        </div>
+
+        <div class="mt-5 sm:mt-7 pt-4 sm:pt-6 border-t border-slate-200 dark:border-white/10">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 text-xs text-slate-500 mb-4">
+            <div class="flex flex-wrap items-center gap-x-1.5 gap-y-1">
+              <span>Windows 10/11</span><span>•</span>
+              <span>64-bit</span><span>•</span>
+              <span>4th Gen+ CPU</span><span>•</span>
+              <span>2GB RAM</span>
+            </div>
+            <span class="font-bold text-slate-700 dark:text-slate-300 shrink-0">66.7 MB</span>
+          </div>
+          <a href="https://github.com/kmltronix/MediaPro/releases/download/v1.4/MediaPro-v1.4.0-Setup.zip"
+             class="download-link w-full inline-flex items-center justify-center gap-2 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold transition text-sm"
+             data-name="Windows v1.4">
+            <i class="fa-solid fa-download"></i> Download for Windows
+          </a>
+        </div>
+      </article>
+
+      <!-- Android -->
+      <article class="download-card shine reveal rounded-3xl border border-emerald-500/20 dark:border-emerald-400/20 bg-white/80 dark:bg-[#101722]/85 backdrop-blur-xl p-5 sm:p-7 shadow-emeraldGlow flex flex-col justify-between">
+        <div>
+          <div class="flex items-start justify-between gap-3">
+            <div class="flex items-center gap-3.5">
+              <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center text-xl sm:text-2xl shrink-0">
+                <i class="fa-brands fa-android"></i>
+              </div>
+              <div>
+                <div class="font-black text-lg sm:text-xl text-slate-950 dark:text-white">MediaPro Android</div>
+                <div class="text-xs text-slate-500 mt-0.5">Mobile • v1.1</div>
+              </div>
+            </div>
+            <span class="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-500 text-[10px] font-bold uppercase shrink-0">APK</span>
+          </div>
+
+          <div class="mt-5 sm:mt-7 space-y-2.5">
+            <a href="https://github.com/kmltronix/MediaPro/releases/download/android_v1.1/MediaPro-arm64-v8a-release.apk"
+               class="download-link flex items-center justify-between gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/10 p-3.5 transition" data-name="Android ARM64">
+              <span class="flex items-center gap-3"><i class="fa-solid fa-microchip text-emerald-500 text-sm"></i><span><b class="text-xs sm:text-sm">arm64-v8a</b><small class="block text-[11px] text-slate-500">Recommended • 58 MB</small></span></span>
+              <i class="fa-solid fa-download text-emerald-500 text-sm shrink-0"></i>
             </a>
-            <a href="#android-download" class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-8 py-3.5 rounded-xl transition flex items-center justify-center space-x-2 shadow-lg shadow-emerald-600/20">
-                <i class="fa-brands fa-android text-xl"></i>
-                <span>Android APK (v1.1)</span>
+            <a href="https://github.com/kmltronix/MediaPro/releases/download/android_v1.1/MediaPro-universal-release.apk"
+               class="download-link flex items-center justify-between gap-3 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3.5 transition" data-name="Android Universal">
+              <span class="flex items-center gap-3"><i class="fa-solid fa-cubes text-slate-500 text-sm"></i><span><b class="text-xs sm:text-sm">Universal APK</b><small class="block text-[11px] text-slate-500">All supported devices • 104 MB</small></span></span>
+              <i class="fa-solid fa-download text-slate-500 text-sm shrink-0"></i>
             </a>
+            <a href="https://github.com/kmltronix/MediaPro/releases/download/android_v1.1/MediaPro-armeabi-v7a-release.apk"
+               class="download-link flex items-center justify-between gap-3 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3.5 transition" data-name="Android ARM32">
+              <span class="flex items-center gap-3"><i class="fa-solid fa-mobile-screen text-slate-500 text-sm"></i><span><b class="text-xs sm:text-sm">armeabi-v7a</b><small class="block text-[11px] text-slate-500">32-bit devices • 51.2 MB</small></span></span>
+              <i class="fa-solid fa-download text-slate-500 text-sm shrink-0"></i>
+            </a>
+          </div>
         </div>
-    </section>
+      </article>
+    </div>
+  </section>
 
-    <!-- Download Cards -->
-    <section class="max-w-6xl mx-auto px-6 py-8 grid md:grid-cols-2 gap-8">
-        
-        <!-- Windows v1.4 Card -->
-        <div class="bg-white dark:bg-[#161b22] border border-slate-200 dark:border-[#30363d] rounded-2xl p-8 flex flex-col justify-between shadow-sm">
+  <!-- FEATURES -->
+  <section id="features" class="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-16 md:py-20 border-t border-slate-200 dark:border-white/10">
+    <div class="reveal text-center max-w-2xl mx-auto">
+      <div class="text-emerald-500 text-xs font-bold uppercase tracking-[.2em]">Built for everyday use</div>
+      <h2 class="mt-2 text-2xl sm:text-4xl font-black text-slate-950 dark:text-white">Powerful features, clean workflow</h2>
+    </div>
+
+    <div class="mt-6 sm:mt-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-5">
+      <div class="reveal rounded-2xl border border-emerald-500/20 bg-white/70 dark:bg-white/[.03] p-4 sm:p-6">
+        <i class="fa-solid fa-headphones text-emerald-500 text-lg sm:text-xl"></i>
+        <h3 class="mt-3 sm:mt-4 font-black text-base sm:text-lg text-slate-950 dark:text-white">Background Audio</h3>
+        <p class="mt-1.5 sm:mt-2 text-xs sm:text-sm leading-5 sm:leading-6 text-slate-600 dark:text-slate-400">Listen to supported video audio while the screen is locked or while multitasking.</p>
+      </div>
+      <div class="reveal rounded-2xl border border-blue-500/20 bg-white/70 dark:bg-white/[.03] p-4 sm:p-6">
+        <i class="fa-solid fa-layer-group text-blue-500 text-lg sm:text-xl"></i>
+        <h3 class="mt-3 sm:mt-4 font-black text-base sm:text-lg text-slate-950 dark:text-white">Batch Downloads</h3>
+        <p class="mt-1.5 sm:mt-2 text-xs sm:text-sm leading-5 sm:leading-6 text-slate-600 dark:text-slate-400">Queue multiple links and process them through the desktop workflow.</p>
+      </div>
+      <div class="reveal rounded-2xl border border-amber-500/20 bg-white/70 dark:bg-white/[.03] p-4 sm:p-6">
+        <i class="fa-solid fa-scissors text-amber-500 text-lg sm:text-xl"></i>
+        <h3 class="mt-3 sm:mt-4 font-black text-base sm:text-lg text-slate-950 dark:text-white">Instant Trimming</h3>
+        <p class="mt-1.5 sm:mt-2 text-xs sm:text-sm leading-5 sm:leading-6 text-slate-600 dark:text-slate-400">Choose start and end timestamps to work with only the portion you need.</p>
+      </div>
+      <div class="reveal rounded-2xl border border-purple-500/20 bg-white/70 dark:bg-white/[.03] p-4 sm:p-6">
+        <i class="fa-solid fa-music text-purple-500 text-lg sm:text-xl"></i>
+        <h3 class="mt-3 sm:mt-4 font-black text-base sm:text-lg text-slate-950 dark:text-white">High-Quality Audio</h3>
+        <p class="mt-1.5 sm:mt-2 text-xs sm:text-sm leading-5 sm:leading-6 text-slate-600 dark:text-slate-400">Extract high-bitrate audio with metadata and thumbnail support where available.</p>
+      </div>
+      <div class="reveal rounded-2xl border border-cyan-500/20 bg-white/70 dark:bg-white/[.03] p-4 sm:p-6">
+        <i class="fa-solid fa-mobile-screen-button text-cyan-500 text-lg sm:text-xl"></i>
+        <h3 class="mt-3 sm:mt-4 font-black text-base sm:text-lg text-slate-950 dark:text-white">Android Integration</h3>
+        <p class="mt-1.5 sm:mt-2 text-xs sm:text-sm leading-5 sm:leading-6 text-slate-600 dark:text-slate-400">Use Android share links and background notification controls.</p>
+      </div>
+      <div class="reveal rounded-2xl border border-rose-500/20 bg-white/70 dark:bg-white/[.03] p-4 sm:p-6">
+        <i class="fa-solid fa-shield-halved text-rose-500 text-lg sm:text-xl"></i>
+        <h3 class="mt-3 sm:mt-4 font-black text-base sm:text-lg text-slate-950 dark:text-white">Safe & Ad-Free</h3>
+        <p class="mt-1.5 sm:mt-2 text-xs sm:text-sm leading-5 sm:leading-6 text-slate-600 dark:text-slate-400">No ads, no unwanted pop-ups, and 100% safe to use on any device.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SCREENSHOTS SECTION -->
+  <section id="screenshots" class="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-16 md:py-20 border-t border-slate-200 dark:border-white/10">
+    <div class="reveal text-center max-w-2xl mx-auto mb-6 sm:mb-10">
+      <div class="text-blue-500 text-xs font-bold uppercase tracking-[.2em]">Visual Preview</div>
+      <h2 class="mt-2 text-2xl sm:text-4xl font-black text-slate-950 dark:text-white">App Screenshots</h2>
+      <p class="mt-2 text-xs sm:text-base text-slate-600 dark:text-slate-400">Take a look at MediaPro interface on Windows and Android. (Click image to zoom)</p>
+    </div>
+
+    <div class="space-y-6 sm:space-y-10">
+      <!-- Desktop Showcase -->
+      <div class="reveal max-w-5xl mx-auto rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-white/10 bg-white/50 dark:bg-[#101722]/80 backdrop-blur-xl p-2 sm:p-3 shadow-2xl">
+        <div class="flex items-center justify-between px-3 py-1.5 border-b border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 rounded-t-xl mb-2">
+          <div class="flex gap-1.5">
+            <span class="w-2.5 h-2.5 rounded-full bg-red-500/80"></span>
+            <span class="w-2.5 h-2.5 rounded-full bg-yellow-500/80"></span>
+            <span class="w-2.5 h-2.5 rounded-full bg-green-500/80"></span>
+          </div>
+          <span class="text-[11px] sm:text-xs font-bold text-slate-500 dark:text-slate-400"><i class="fa-brands fa-windows text-blue-500 mr-1.5"></i>MediaPro Desktop</span>
+          <div class="w-8"></div>
+        </div>
+        <div class="rounded-xl overflow-hidden border border-slate-200 dark:border-white/10 bg-slate-900 group cursor-pointer" onclick="openLightbox('screenshot1.png')">
+          <img src="screenshot1.png" alt="MediaPro Desktop Interface" class="w-full h-auto block group-hover:scale-[1.01] transition-transform duration-300">
+        </div>
+      </div>
+
+      <!-- Android Mobile Showcase -->
+      <div class="grid grid-cols-2 gap-3 sm:gap-6 max-w-2xl mx-auto pt-2">
+        <!-- Android App 1 -->
+        <div class="reveal flex flex-col items-center">
+          <div class="w-full max-w-[220px] sm:max-w-[280px] rounded-[1.8rem] sm:rounded-[2.5rem] border-2 sm:border-4 border-slate-300 dark:border-white/15 bg-slate-950 p-1.5 sm:p-2 shadow-xl group cursor-pointer" onclick="openLightbox('screenshot2.png')">
+            <div class="rounded-[1.4rem] sm:rounded-[2rem] overflow-hidden">
+              <img src="screenshot2.png" alt="MediaPro Android App" class="w-full h-auto block group-hover:scale-105 transition-transform duration-300">
+            </div>
+          </div>
+          <span class="text-[11px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 mt-2 text-center"><i class="fa-brands fa-android text-emerald-500 mr-1"></i>Android App Main View</span>
+        </div>
+
+        <!-- Android App 2 -->
+        <div class="reveal flex flex-col items-center">
+          <div class="w-full max-w-[220px] sm:max-w-[280px] rounded-[1.8rem] sm:rounded-[2.5rem] border-2 sm:border-4 border-slate-300 dark:border-white/15 bg-slate-950 p-1.5 sm:p-2 shadow-xl group cursor-pointer" onclick="openLightbox('screenshot3.png')">
+            <div class="rounded-[1.4rem] sm:rounded-[2rem] overflow-hidden">
+              <img src="screenshot3.png" alt="MediaPro Audio Player View" class="w-full h-auto block group-hover:scale-105 transition-transform duration-300">
+            </div>
+          </div>
+          <span class="text-[11px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 mt-2 text-center"><i class="fa-solid fa-music text-purple-500 mr-1"></i>Background Audio Player</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section id="how" class="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-16 md:py-20 border-t border-slate-200 dark:border-white/10">
+    <div class="reveal text-center max-w-2xl mx-auto">
+      <div class="text-blue-500 text-xs font-bold uppercase tracking-[.2em]">Simple workflow</div>
+      <h2 class="mt-2 text-2xl sm:text-4xl font-black text-slate-950 dark:text-white">How MediaPro works</h2>
+    </div>
+    <div class="mt-6 sm:mt-10 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3.5 sm:gap-4">
+      <div class="reveal p-4 sm:p-6 rounded-2xl border border-slate-200 dark:border-white/10 bg-white/70 dark:bg-white/[.03]">
+        <span class="text-xs font-black text-blue-500">01</span><h3 class="mt-2 font-black text-base">Copy a link</h3><p class="mt-1 text-xs sm:text-sm text-slate-500 leading-5">Copy a supported media URL.</p>
+      </div>
+      <div class="reveal p-4 sm:p-6 rounded-2xl border border-slate-200 dark:border-white/10 bg-white/70 dark:bg-white/[.03]">
+        <span class="text-xs font-black text-blue-500">02</span><h3 class="mt-2 font-black text-base">Add to MediaPro</h3><p class="mt-1 text-xs sm:text-sm text-slate-500 leading-5">Paste or share the link into the app.</p>
+      </div>
+      <div class="reveal p-4 sm:p-6 rounded-2xl border border-slate-200 dark:border-white/10 bg-white/70 dark:bg-white/[.03]">
+        <span class="text-xs font-black text-blue-500">03</span><h3 class="mt-2 font-black text-base">Choose output</h3><p class="mt-1 text-xs sm:text-sm text-slate-500 leading-5">Select available video or audio options.</p>
+      </div>
+      <div class="reveal p-4 sm:p-6 rounded-2xl border border-slate-200 dark:border-white/10 bg-white/70 dark:bg-white/[.03]">
+        <span class="text-xs font-black text-blue-500">04</span><h3 class="mt-2 font-black text-base">Download</h3><p class="mt-1 text-xs sm:text-sm text-slate-500 leading-5">Start download & track progress.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- BACKGROUND AUDIO -->
+  <section class="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
+    <div class="reveal rounded-3xl border border-emerald-500/20 bg-gradient-to-br from-emerald-50 via-slate-100 to-blue-50 dark:from-emerald-950/50 dark:via-slate-950 dark:to-blue-950/50 p-5 sm:p-8 md:p-10 overflow-hidden relative">
+      <div class="absolute -right-20 -top-20 w-64 h-64 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="relative flex flex-col md:flex-row md:items-center justify-between gap-5 sm:gap-7">
+        <div>
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-emerald-500/15 border border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400 text-lg sm:text-xl shrink-0">
+              <i class="fa-solid fa-headphones-simple"></i>
+            </div>
             <div>
-                <div class="flex items-center justify-between mb-4">
-                    <span class="text-blue-600 dark:text-blue-400 font-semibold flex items-center gap-2">
-                        <i class="fa-brands fa-windows"></i> MediaPro Windows v1.4
-                    </span>
-                    <span class="bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 text-xs px-2.5 py-1 rounded-md border border-blue-200 dark:border-blue-700/50">Desktop</span>
-                </div>
-                <h3 class="text-2xl font-bold text-slate-900 dark:text-white mb-4">✨ Key Features</h3>
-                <ul class="space-y-3 text-slate-600 dark:text-gray-300 text-sm mb-6">
-                    <li class="flex items-start gap-2"><i class="fa-solid fa-check text-blue-500 mt-1"></i> <strong>Bulk / Batch Downloader:</strong> Queue multiple links with parallel speed.</li>
-                    <li class="flex items-start gap-2"><i class="fa-solid fa-check text-blue-500 mt-1"></i> <strong>Precise Media Trimming:</strong> Trim specific segments on the fly.</li>
-                    <li class="flex items-start gap-2"><i class="fa-solid fa-check text-blue-500 mt-1"></i> <strong>Engine Optimizations:</strong> Low RAM usage during batch downloads.</li>
-                </ul>
+              <h2 class="text-lg sm:text-2xl font-black text-slate-950 dark:text-white">Background Audio Playback</h2>
+              <div class="flex items-end gap-1 h-4 sm:h-5 mt-1">
+                <span class="bar w-1 rounded-full bg-emerald-500 dark:bg-emerald-400"></span>
+                <span class="bar w-1 rounded-full bg-emerald-500 dark:bg-emerald-400"></span>
+                <span class="bar w-1 rounded-full bg-emerald-500 dark:bg-emerald-400"></span>
+                <span class="bar w-1 rounded-full bg-emerald-500 dark:bg-emerald-400"></span>
+              </div>
             </div>
-            
-            <div id="windows-download" class="border-t border-slate-100 dark:border-[#30363d] pt-6">
-                <div class="text-xs text-slate-500 dark:text-gray-400 mb-3">
-                    <strong>Requirements:</strong> Windows 10/11 (64-bit) | 2GB RAM
-                </div>
-                <a href="https://github.com/kmltronix/MediaPro/releases/download/v1.4/MediaPro-v1.4.0-Setup.zip" class="block w-full text-center bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 rounded-xl transition">
-                    <i class="fa-solid fa-download mr-2"></i> Download Setup (.zip) - 66.7 MB
-                </a>
-            </div>
+          </div>
+          <p class="mt-3 text-xs sm:text-sm leading-5 sm:leading-6 text-slate-600 dark:text-slate-300 max-w-2xl">Listen to supported video audio while your screen is locked or while using other apps.</p>
         </div>
+        <a href="#downloads" class="shrink-0 inline-flex justify-center items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 px-5 py-3 font-bold text-white text-xs sm:text-sm transition">
+          <i class="fa-brands fa-android"></i> Get Android
+        </a>
+      </div>
+    </div>
+  </section>
 
-        <!-- Android v1.1 Card -->
-        <div class="bg-white dark:bg-[#161b22] border border-slate-200 dark:border-[#30363d] rounded-2xl p-8 flex flex-col justify-between shadow-sm">
-            <div>
-                <div class="flex items-center justify-between mb-4">
-                    <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-2">
-                        <i class="fa-brands fa-android"></i> MediaPro Android v1.1
-                    </span>
-                    <span class="bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 text-xs px-2.5 py-1 rounded-md border border-emerald-200 dark:border-emerald-700/50">Mobile</span>
-                </div>
-                <h3 class="text-2xl font-bold text-slate-900 dark:text-white mb-4">✨ Key Features</h3>
-                <ul class="space-y-3 text-slate-600 dark:text-gray-300 text-sm mb-6">
-                    <li class="flex items-start gap-2"><i class="fa-solid fa-check text-emerald-500 mt-1"></i> <strong>Direct Share Link Support:</strong> Share links straight from YouTube/TikTok.</li>
-                    <li class="flex items-start gap-2"><i class="fa-solid fa-check text-emerald-500 mt-1"></i> <strong>Background Audio Playback:</strong> Stream audio with screen off.</li>
-                    <li class="flex items-start gap-2"><i class="fa-solid fa-check text-emerald-500 mt-1"></i> <strong>Custom Trimming:</strong> Select and cut specific time frames.</li>
-                </ul>
-            </div>
+  <!-- FAQ -->
+  <section id="faq" class="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-16 md:py-20">
+    <div class="reveal text-center">
+      <div class="text-blue-500 text-xs font-bold uppercase tracking-[.2em]">Support</div>
+      <h2 class="mt-2 text-2xl sm:text-4xl font-black text-slate-950 dark:text-white">Frequently asked questions</h2>
+    </div>
 
-            <!-- Updated Android Download URLs -->
-            <div id="android-download" class="border-t border-slate-100 dark:border-[#30363d] pt-6">
-                <div class="text-xs text-slate-500 dark:text-gray-400 mb-3">Select Architecture APK:</div>
-                <div class="grid grid-cols-1 gap-2.5 text-xs">
-                    
-                    <!-- Recommended arm64-v8a -->
-                    <a href="https://github.com/kmltronix/MediaPro-Android/releases/download/android_v1.1/MediaPro-arm64-v8a-release.apk" class="bg-emerald-50 dark:bg-[#21262d] hover:bg-emerald-100 dark:hover:bg-[#30363d] text-emerald-700 dark:text-emerald-400 p-3 rounded-xl flex justify-between items-center border border-emerald-200 dark:border-[#30363d] font-medium transition">
-                        <span><i class="fa-solid fa-mobile-screen mr-2"></i> arm64-v8a (Recommended for modern phones)</span>
-                        <span class="text-xs opacity-80">58 MB <i class="fa-solid fa-download ml-1"></i></span>
-                    </a>
+    <div class="mt-6 sm:mt-8 space-y-2.5 sm:space-y-3">
+      <div class="faq reveal rounded-2xl border border-slate-200 dark:border-white/10 bg-white/70 dark:bg-white/[.03]">
+        <button class="faq-btn w-full p-4 sm:p-5 text-left flex items-center justify-between gap-3 font-bold text-xs sm:text-sm">
+          <span>Which Android APK should I choose?</span><i class="faq-icon fa-solid fa-plus text-slate-400 text-xs"></i>
+        </button>
+        <div class="faq-answer px-4 sm:px-5 text-xs sm:text-sm text-slate-500 leading-5 sm:leading-6">The arm64-v8a build is recommended for most modern mobile devices. Universal is intended for broader compatibility across older architectures.</div>
+      </div>
+      <div class="faq reveal rounded-2xl border border-slate-200 dark:border-white/10 bg-white/70 dark:bg-white/[.03]">
+        <button class="faq-btn w-full p-4 sm:p-5 text-left flex items-center justify-between gap-3 font-bold text-xs sm:text-sm">
+          <span>Does MediaPro support background audio?</span><i class="faq-icon fa-solid fa-plus text-slate-400 text-xs"></i>
+        </button>
+        <div class="faq-answer px-4 sm:px-5 text-xs sm:text-sm text-slate-500 leading-5 sm:leading-6">Yes, the Android application supports playing audio in the background and controls in notification panel while your screen is locked.</div>
+      </div>
+      <div class="faq reveal rounded-2xl border border-slate-200 dark:border-white/10 bg-white/70 dark:bg-white/[.03]">
+        <button class="faq-btn w-full p-4 sm:p-5 text-left flex items-center justify-between gap-3 font-bold text-xs sm:text-sm">
+          <span>What Windows versions are supported?</span><i class="faq-icon fa-solid fa-plus text-slate-400 text-xs"></i>
+        </button>
+        <div class="faq-answer px-4 sm:px-5 text-xs sm:text-sm text-slate-500 leading-5 sm:leading-6">MediaPro desktop supports 64-bit Windows 10 and 11 systems smoothly.</div>
+      </div>
+      <div class="faq reveal rounded-2xl border border-slate-200 dark:border-white/10 bg-white/70 dark:bg-white/[.03]">
+        <button class="faq-btn w-full p-4 sm:p-5 text-left flex items-center justify-between gap-3 font-bold text-xs sm:text-sm">
+          <span>Where can I report a bug or request a feature?</span><i class="faq-icon fa-solid fa-plus text-slate-400 text-xs"></i>
+        </button>
+        <div class="faq-answer px-4 sm:px-5 text-xs sm:text-sm text-slate-500 leading-5 sm:leading-6">Feel free to open an issue on GitHub or reach out via WhatsApp.</div>
+      </div>
+    </div>
+  </section>
 
-                    <!-- Universal -->
-                    <a href="https://github.com/kmltronix/MediaPro-Android/releases/download/android_v1.1/MediaPro-universal-release.apk" class="bg-slate-50 dark:bg-[#21262d] hover:bg-slate-100 dark:hover:bg-[#30363d] text-slate-700 dark:text-gray-300 p-3 rounded-xl flex justify-between items-center border border-slate-200 dark:border-[#30363d] transition">
-                        <span><i class="fa-solid fa-cubes mr-2"></i> Universal APK (Works on all devices)</span>
-                        <span class="text-xs opacity-80">104 MB <i class="fa-solid fa-download ml-1"></i></span>
-                    </a>
-
-                    <!-- armeabi-v7a -->
-                    <a href="https://github.com/kmltronix/MediaPro-Android/releases/download/android_v1.1/MediaPro-armeabi-v7a-release.apk" class="bg-slate-50 dark:bg-[#21262d] hover:bg-slate-100 dark:hover:bg-[#30363d] text-slate-700 dark:text-gray-300 p-3 rounded-xl flex justify-between items-center border border-slate-200 dark:border-[#30363d] transition">
-                        <span><i class="fa-solid fa-microchip mr-2"></i> armeabi-v7a (Older 32-bit devices)</span>
-                        <span class="text-xs opacity-80">51.2 MB <i class="fa-solid fa-download ml-1"></i></span>
-                    </a>
-
-                </div>
-            </div>
+  <!-- DEVELOPER -->
+  <section class="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-16">
+    <div class="reveal rounded-3xl border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-[#101722]/80 backdrop-blur-xl p-5 sm:p-7 md:p-9">
+      <div class="flex flex-col md:flex-row items-center gap-5 sm:gap-7">
+        <img src="https://github.com/kmltronix.png" alt="Kavindu M. Liyanage" class="w-20 h-20 sm:w-28 sm:h-28 rounded-full border-4 border-emerald-500 object-cover shadow-xl shrink-0">
+        <div class="flex-1 text-center md:text-left">
+          <div class="flex flex-wrap justify-center md:justify-start gap-1.5 sm:gap-2 mb-2.5">
+            <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-[11px] font-bold">Founder & Lead Developer, KML Tronix</span>
+            <span class="px-2.5 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-500 text-[11px] font-bold">Custom Projects</span>
+          </div>
+          <h2 class="text-xl sm:text-3xl font-black text-slate-950 dark:text-white">Kavindu M Liyanage</h2>
+          <p class="mt-2 text-xs sm:text-base leading-5 sm:leading-7 text-slate-600 dark:text-slate-400">Need custom desktop software, Android apps, web applications, or modern websites? Contact me to discuss your project.</p>
+          <div class="mt-4 sm:mt-5 flex flex-wrap justify-center md:justify-start gap-2.5">
+            <a href="https://wa.me/94741252394" target="_blank" rel="noopener" class="px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-bold transition"><i class="fa-brands fa-whatsapp mr-2"></i>WhatsApp</a>
+            <a href="https://github.com/kmltronix" target="_blank" rel="noopener" class="px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl bg-slate-900 dark:bg-white/10 hover:bg-slate-800 dark:hover:bg-white/15 text-white text-xs sm:text-sm font-bold transition"><i class="fa-brands fa-github mr-2"></i>GitHub</a>
+            <a href="https://tiktok.com/@kmltronix" target="_blank" rel="noopener" class="px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs sm:text-sm font-bold transition"><i class="fa-brands fa-tiktok mr-2"></i>TikTok</a>
+          </div>
         </div>
+      </div>
+    </div>
+  </section>
+</main>
 
-    </section>
+<!-- ABOUT MODAL -->
+<div id="about-modal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-slate-950/60 backdrop-blur-sm p-4">
+  <div class="relative w-full max-w-md rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#101722] p-6 shadow-2xl transition-all">
+    <button id="close-about" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 dark:bg-white/10 flex items-center justify-center text-slate-500 hover:text-slate-900 dark:hover:text-white transition">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
 
-    <!-- Footer -->
-    <footer class="border-t border-slate-200 dark:border-[#30363d] bg-white dark:bg-[#161b22] py-8 mt-12">
-        <div class="max-w-6xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-slate-500 dark:text-gray-500">
-            <div>
-                © 2026 MediaPro by <a href="https://github.com/kmltronix" class="text-slate-800 dark:text-gray-300 hover:underline">@kmltronix</a>
-            </div>
-            <div class="flex space-x-6">
-                <a href="https://github.com/kmltronix" target="_blank" class="hover:text-slate-800 dark:hover:text-gray-300">GitHub</a>
-                <a href="https://tiktok.com/@kmltronix" target="_blank" class="hover:text-slate-800 dark:hover:text-gray-300">TikTok</a>
-            </div>
-        </div>
-    </footer>
+    <div class="flex flex-col items-center text-center">
+      <img src="https://github.com/kmltronix.png" alt="Kavindu M. Liyanage" class="w-20 h-20 rounded-full border-4 border-emerald-500 object-cover shadow-lg mb-3">
+      <h3 class="text-lg font-black text-slate-950 dark:text-white">Kavindu M. Liyanage</h3>
+      <p class="text-xs font-bold text-emerald-500 mt-0.5">Founder & Lead Developer, KML Tronix</p>
+      
+      <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-3 leading-relaxed">
+        Desktop software, native Android applications, custom web solutions, and embedded systems developer.
+      </p>
 
-    <!-- Dark/Light Mode Script -->
-    <script>
-        const themeToggleBtn = document.getElementById('theme-toggle');
-        const themeIcon = document.getElementById('theme-icon');
-        const htmlElement = document.documentElement;
+      <div class="flex flex-wrap justify-center gap-2 mt-4">
+        <a href="https://wa.me/94741252394" target="_blank" rel="noopener" class="px-3.5 py-1.5 rounded-xl bg-emerald-600 text-white font-bold text-xs hover:bg-emerald-500 transition">
+          <i class="fa-brands fa-whatsapp mr-1"></i> WhatsApp
+        </a>
+        <a href="https://github.com/kmltronix" target="_blank" rel="noopener" class="px-3.5 py-1.5 rounded-xl bg-slate-900 dark:bg-white/10 text-white font-bold text-xs hover:bg-slate-800 transition">
+          <i class="fa-brands fa-github mr-1"></i> GitHub
+        </a>
+        <a href="https://tiktok.com/@kmltronix" target="_blank" rel="noopener" class="px-3.5 py-1.5 rounded-xl bg-rose-600 text-white font-bold text-xs hover:bg-rose-500 transition">
+          <i class="fa-brands fa-tiktok mr-1"></i> TikTok
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
 
-        themeToggleBtn.addEventListener('click', () => {
-            if (htmlElement.classList.contains('dark')) {
-                htmlElement.classList.remove('dark');
-                themeIcon.classList.remove('fa-moon');
-                themeIcon.classList.add('fa-sun');
-            } else {
-                htmlElement.classList.add('dark');
-                themeIcon.classList.remove('fa-sun');
-                themeIcon.classList.add('fa-moon');
-            }
-        });
-    </script>
+<!-- LIGHTBOX POPUP MODAL -->
+<div id="lightbox" class="fixed inset-0 z-[110] hidden items-center justify-center bg-black/85 backdrop-blur-md p-4 sm:p-8 opacity-0 transition-opacity duration-300" onclick="closeLightbox()">
+  <button onclick="closeLightbox()" class="absolute top-4 right-4 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 rounded-full w-9 h-9 flex items-center justify-center transition-all z-10">
+    <i class="fa-solid fa-xmark text-lg"></i>
+  </button>
+  <div class="relative max-w-6xl max-h-[90vh] flex items-center justify-center" onclick="event.stopPropagation()">
+    <img id="lightbox-img" src="" alt="Preview" class="max-w-full max-h-[88vh] rounded-2xl shadow-2xl object-contain scale-95 transition-transform duration-300">
+  </div>
+</div>
+
+<footer class="border-t border-slate-200 dark:border-white/10 bg-white/70 dark:bg-[#080d16]/80">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6 flex flex-col md:flex-row items-center justify-between gap-3 text-xs sm:text-sm text-slate-500">
+    <div>© 2026 MediaPro by <a href="https://github.com/kmltronix" class="font-semibold hover:text-blue-500">Kavindu M. Liyanage</a></div>
+    <div class="flex gap-4">
+      <a href="https://wa.me/94741252394" target="_blank" rel="noopener" class="hover:text-emerald-500">WhatsApp</a>
+      <a href="https://github.com/kmltronix" target="_blank" rel="noopener" class="hover:text-slate-900 dark:hover:text-white">GitHub</a>
+      <a href="https://tiktok.com/@kmltronix" target="_blank" rel="noopener" class="hover:text-rose-500">TikTok</a>
+    </div>
+  </div>
+</footer>
+
+<!-- Toast -->
+<div id="toast" class="toast fixed bottom-5 left-1/2 -translate-x-1/2 z-[100] rounded-xl bg-slate-950 text-white px-5 py-3 text-xs sm:text-sm font-semibold shadow-2xl">
+  Starting download…
+</div>
+
+<script>
+(() => {
+  const html = document.documentElement;
+  const themeBtn = document.getElementById('theme-toggle');
+  const themeIcon = document.getElementById('theme-icon');
+
+  // Theme Sync & Logic
+  function updateThemeIcon() {
+    const isDark = html.classList.contains('dark');
+    themeIcon.className = isDark ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+  }
+
+  // Set icon according to initial state
+  updateThemeIcon();
+
+  if (themeBtn) {
+    themeBtn.addEventListener('click', () => {
+      const isDark = html.classList.toggle('dark');
+      localStorage.setItem('mediapro-theme', isDark ? 'dark' : 'light');
+      updateThemeIcon();
+    });
+  }
+
+  // Reveal on scroll
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('show');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+  // FAQ Toggle
+  document.querySelectorAll('.faq-btn').forEach(btn => {
+    btn.addEventListener('click', () => btn.closest('.faq').classList.toggle('open'));
+  });
+
+  // Download toast
+  const toast = document.getElementById('toast');
+  let toastTimer;
+  document.querySelectorAll('.download-link').forEach(link => {
+    link.addEventListener('click', () => {
+      toast.textContent = `Starting ${link.dataset.name || 'download'}…`;
+      toast.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove('show'), 2200);
+    });
+  });
+
+  // Global Lightbox Functions
+  window.openLightbox = function(imageSrc) {
+    const lightbox = document.getElementById('lightbox');
+    const lightboxImg = document.getElementById('lightbox-img');
+    if (!lightbox || !lightboxImg) return;
+    
+    lightboxImg.src = imageSrc;
+    lightbox.classList.remove('hidden');
+    lightbox.classList.add('flex');
+    
+    setTimeout(() => {
+      lightbox.classList.remove('opacity-0');
+      lightboxImg.classList.remove('scale-95');
+      lightboxImg.classList.add('scale-100');
+    }, 10);
+    
+    document.body.style.overflow = 'hidden';
+  };
+
+  window.closeLightbox = function() {
+    const lightbox = document.getElementById('lightbox');
+    const lightboxImg = document.getElementById('lightbox-img');
+    if (!lightbox || !lightboxImg) return;
+    
+    lightbox.classList.add('opacity-0');
+    lightboxImg.classList.remove('scale-100');
+    lightboxImg.classList.add('scale-95');
+    
+    setTimeout(() => {
+      lightbox.classList.add('hidden');
+      lightbox.classList.remove('flex');
+      document.body.style.overflow = 'auto';
+    }, 300);
+  };
+
+  // Keyboard support: Close on Esc
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      window.closeLightbox();
+    }
+  });
+
+  // About Modal Logic
+  const profileBtn = document.getElementById('profile-btn');
+  const aboutModal = document.getElementById('about-modal');
+  const closeAbout = document.getElementById('close-about');
+
+  if (profileBtn && aboutModal && closeAbout) {
+    profileBtn.addEventListener('click', () => {
+      aboutModal.classList.remove('hidden');
+      aboutModal.classList.add('flex');
+    });
+
+    closeAbout.addEventListener('click', () => {
+      aboutModal.classList.add('hidden');
+      aboutModal.classList.remove('flex');
+    });
+
+    aboutModal.addEventListener('click', (e) => {
+      if (e.target === aboutModal) {
+        aboutModal.classList.add('hidden');
+        aboutModal.classList.remove('flex');
+      }
+    });
+  }
+
+  // Dynamic Cursor Glow Effect
+  const glow = document.getElementById('cursor-glow');
+  if (glow) {
+    window.addEventListener('pointermove', (e) => {
+      glow.style.left = `${e.clientX}px`;
+      glow.style.top = `${e.clientY}px`;
+      glow.style.opacity = '1';
+    });
+
+    document.addEventListener('mouseleave', () => {
+      glow.style.opacity = '0';
+    });
+  }
+})();
+</script>
 </body>
 </html>
